@@ -1,0 +1,418 @@
+basePath: /
+definitions:
+  dto.BookCreateDTO:
+    properties:
+      description:
+        maxLength: 1000
+        type: string
+      title:
+        maxLength: 255
+        minLength: 1
+        type: string
+    required:
+    - title
+    type: object
+  dto.BookResponseDTO:
+    properties:
+      description:
+        type: string
+      id:
+        type: integer
+      title:
+        type: string
+    type: object
+  dto.BookUpdateDTO:
+    properties:
+      description:
+        maxLength: 1000
+        type: string
+      title:
+        maxLength: 255
+        minLength: 1
+        type: string
+    required:
+    - title
+    type: object
+  dto.ReaderCreateDTO:
+    properties:
+      name:
+        maxLength: 100
+        minLength: 1
+        type: string
+      surname:
+        maxLength: 100
+        minLength: 1
+        type: string
+    required:
+    - name
+    - surname
+    type: object
+  dto.ReaderResponseDTO:
+    properties:
+      id:
+        type: integer
+      name:
+        type: string
+      surname:
+        type: string
+    type: object
+  dto.ReaderUpdateDTO:
+    properties:
+      name:
+        maxLength: 100
+        minLength: 1
+        type: string
+      surname:
+        maxLength: 100
+        minLength: 1
+        type: string
+    required:
+    - name
+    - surname
+    type: object
+host: localhost:8081
+info:
+  contact: {}
+  description: REST API for library management with SQLite database
+  title: Library API
+  version: "1.0"
+paths:
+  /books/:
+    delete:
+      responses:
+        "204":
+          description: No Content
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Delete all books
+      tags:
+      - books
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.BookResponseDTO'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get all books
+      tags:
+      - books
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Book to create
+        in: body
+        name: book
+        required: true
+        schema:
+          $ref: '#/definitions/dto.BookCreateDTO'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.BookResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create a new book
+      tags:
+      - books
+  /books/{id}:
+    delete:
+      parameters:
+      - description: Book ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Delete book by ID
+      tags:
+      - books
+    get:
+      parameters:
+      - description: Book ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.BookResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get book by ID
+      tags:
+      - books
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Book ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Updated book data
+        in: body
+        name: book
+        required: true
+        schema:
+          $ref: '#/definitions/dto.BookUpdateDTO'
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Update book by ID
+      tags:
+      - books
+  /readers/:
+    delete:
+      responses:
+        "204":
+          description: No Content
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Delete all readers
+      tags:
+      - readers
+    get:
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            items:
+              $ref: '#/definitions/dto.ReaderResponseDTO'
+            type: array
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get all readers
+      tags:
+      - readers
+    post:
+      consumes:
+      - application/json
+      parameters:
+      - description: Reader to create
+        in: body
+        name: reader
+        required: true
+        schema:
+          $ref: '#/definitions/dto.ReaderCreateDTO'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Created
+          schema:
+            $ref: '#/definitions/dto.ReaderResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Create a new reader
+      tags:
+      - readers
+  /readers/{id}:
+    delete:
+      parameters:
+      - description: Reader ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Delete reader by ID
+      tags:
+      - readers
+    get:
+      parameters:
+      - description: Reader ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: OK
+          schema:
+            $ref: '#/definitions/dto.ReaderResponseDTO'
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Get reader by ID
+      tags:
+      - readers
+    put:
+      consumes:
+      - application/json
+      parameters:
+      - description: Reader ID
+        in: path
+        name: id
+        required: true
+        type: integer
+      - description: Updated reader data
+        in: body
+        name: reader
+        required: true
+        schema:
+          $ref: '#/definitions/dto.ReaderUpdateDTO'
+      responses:
+        "204":
+          description: No Content
+        "400":
+          description: Bad Request
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Not Found
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+        "500":
+          description: Internal Server Error
+          schema:
+            additionalProperties:
+              type: string
+            type: object
+      summary: Update reader by ID
+      tags:
+      - readers
+swagger: "2.0"
