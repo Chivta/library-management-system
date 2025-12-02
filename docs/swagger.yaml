@@ -70,7 +70,7 @@ definitions:
     - name
     - surname
     type: object
-host: localhost:8081
+host: localhost:8080
 info:
   contact: {}
   description: REST API for library management with SQLite database

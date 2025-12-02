@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"errors"
+	"lab1/config"
 	"lab1/dto"
 	"lab1/models"
 	"lab1/repository"
@@ -16,19 +17,26 @@ import (
 type ReadersHandler struct {
 	repo      repository.ReaderRepository
 	validator *validation.Validator
+	config    *config.Config
 }
 
-func NewReadersHandler(repo repository.ReaderRepository, validator *validation.Validator) *ReadersHandler {
-	return &ReadersHandler{repo: repo, validator: validator}
+func NewReadersHandler(repo repository.ReaderRepository, validator *validation.Validator, config *config.Config) *ReadersHandler {
+	return &ReadersHandler{repo: repo, validator: validator, config: config}
 }
 
 // @Summary Get all readers
 // @Tags readers
 // @Produce json
 // @Success 200 {array} dto.ReaderResponseDTO
+// @Failure 403 {object} map[string]string
 // @Failure 500 {object} map[string]string
 // @Router /readers/ [get]
 func (h *ReadersHandler) GetAll(c *gin.Context) {
+	if !h.config.EnableGetReaders {
+		c.JSON(http.StatusForbidden, gin.H{"error": "GET /readers endpoint is disabled"})
+		return
+	}
+
 	readers, err := h.repo.FindAll()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve readers"})
@@ -53,9 +61,15 @@ func (h *ReadersHandler) GetAll(c *gin.Context) {
 // @Param reader body dto.ReaderCreateDTO true "Reader to create"
 // @Success 201 {object} dto.ReaderResponseDTO
 // @Failure 400 {object} map[string]interface{}
+// @Failure 403 {object} map[string]string
 // @Failure 500 {object} map[string]string
 // @Router /readers/ [post]
 func (h *ReadersHandler) Create(c *gin.Context) {
+	if !h.config.EnablePostReaders {
+		c.JSON(http.StatusForbidden, gin.H{"error": "POST /readers endpoint is disabled"})
+		return
+	}
+
 	var readerDTO dto.ReaderCreateDTO
 	if err := c.ShouldBindJSON(&readerDTO); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON", "details": err.Error()})
@@ -88,9 +102,15 @@ func (h *ReadersHandler) Create(c *gin.Context) {
 // @Summary Delete all readers
 // @Tags readers
 // @Success 204
+// @Failure 403 {object} map[string]string
 // @Failure 500 {object} map[string]string
 // @Router /readers/ [delete]
 func (h *ReadersHandler) DeleteAll(c *gin.Context) {
+	if !h.config.EnableDeleteReaders {
+		c.JSON(http.StatusForbidden, gin.H{"error": "DELETE /readers endpoint is disabled"})
+		return
+	}
+
 	if err := h.repo.DeleteAll(); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete readers"})
 		return
@@ -104,10 +124,16 @@ func (h *ReadersHandler) DeleteAll(c *gin.Context) {
 // @Param id path int true "Reader ID"
 // @Success 200 {object} dto.ReaderResponseDTO
 // @Failure 400 {object} map[string]string
+// @Failure 403 {object} map[string]string
 // @Failure 404 {object} map[string]string
 // @Failure 500 {object} map[string]string
 // @Router /readers/{id} [get]
 func (h *ReadersHandler) GetByID(c *gin.Context) {
+	if !h.config.EnableGetReaders {
+		c.JSON(http.StatusForbidden, gin.H{"error": "GET /readers endpoint is disabled"})
+		return
+	}
+
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID format"})
@@ -139,10 +165,16 @@ func (h *ReadersHandler) GetByID(c *gin.Context) {
 // @Param reader body dto.ReaderUpdateDTO true "Updated reader data"
 // @Success 204
 // @Failure 400 {object} map[string]interface{}
+// @Failure 403 {object} map[string]string
 // @Failure 404 {object} map[string]string
 // @Failure 500 {object} map[string]string
 // @Router /readers/{id} [put]
 func (h *ReadersHandler) Update(c *gin.Context) {
+	if !h.config.EnablePutReaders {
+		c.JSON(http.StatusForbidden, gin.H{"error": "PUT /readers endpoint is disabled"})
+		return
+	}
+
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID format"})
@@ -186,10 +218,16 @@ func (h *ReadersHandler) Update(c *gin.Context) {
 // @Param id path int true "Reader ID"
 // @Success 204
 // @Failure 400 {object} map[string]string
+// @Failure 403 {object} map[string]string
 // @Failure 404 {object} map[string]string
 // @Failure 500 {object} map[string]string
 // @Router /readers/{id} [delete]
 func (h *ReadersHandler) Delete(c *gin.Context) {
+	if !h.config.EnableDeleteReaders {
+		c.JSON(http.StatusForbidden, gin.H{"error": "DELETE /readers endpoint is disabled"})
+		return
+	}
+
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID format"})

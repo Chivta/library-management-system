@@ -1,0 +1,11 @@
+{
+  "cache_ttl_seconds": 300,
+  "enable_get_books": false,
+  "enable_post_books": true,
+  "enable_put_books": true,
+  "enable_delete_books": true,
+  "enable_get_readers": true,
+  "enable_post_readers": true,
+  "enable_put_readers": true,
+  "enable_delete_readers": true
+}

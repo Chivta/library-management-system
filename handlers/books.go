@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"errors"
+	"lab1/config"
 	"lab1/dto"
 	"lab1/models"
 	"lab1/repository"
@@ -16,19 +17,26 @@ import (
 type BooksHandler struct {
 	repo      repository.BookRepository
 	validator *validation.Validator
+	config    *config.Config
 }
 
-func NewBooksHandler(repo repository.BookRepository, validator *validation.Validator) *BooksHandler {
-	return &BooksHandler{repo: repo, validator: validator}
+func NewBooksHandler(repo repository.BookRepository, validator *validation.Validator, config *config.Config) *BooksHandler {
+	return &BooksHandler{repo: repo, validator: validator, config: config}
 }
 
 // @Summary Get all books
 // @Tags books
 // @Produce json
 // @Success 200 {array} dto.BookResponseDTO
+// @Failure 403 {object} map[string]string
 // @Failure 500 {object} map[string]string
 // @Router /books/ [get]
 func (h *BooksHandler) GetAll(c *gin.Context) {
+	if !h.config.EnableGetBooks {
+		c.JSON(http.StatusForbidden, gin.H{"error": "GET /books endpoint is disabled"})
+		return
+	}
+
 	books, err := h.repo.FindAll()
 	if err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve books"})
@@ -53,9 +61,15 @@ func (h *BooksHandler) GetAll(c *gin.Context) {
 // @Param book body dto.BookCreateDTO true "Book to create"
 // @Success 201 {object} dto.BookResponseDTO
 // @Failure 400 {object} map[string]interface{}
+// @Failure 403 {object} map[string]string
 // @Failure 500 {object} map[string]string
 // @Router /books/ [post]
 func (h *BooksHandler) Create(c *gin.Context) {
+	if !h.config.EnablePostBooks {
+		c.JSON(http.StatusForbidden, gin.H{"error": "POST /books endpoint is disabled"})
+		return
+	}
+
 	var bookDTO dto.BookCreateDTO
 	if err := c.ShouldBindJSON(&bookDTO); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON", "details": err.Error()})
@@ -88,9 +102,15 @@ func (h *BooksHandler) Create(c *gin.Context) {
 // @Summary Delete all books
 // @Tags books
 // @Success 204
+// @Failure 403 {object} map[string]string
 // @Failure 500 {object} map[string]string
 // @Router /books/ [delete]
 func (h *BooksHandler) DeleteAll(c *gin.Context) {
+	if !h.config.EnableDeleteBooks {
+		c.JSON(http.StatusForbidden, gin.H{"error": "DELETE /books endpoint is disabled"})
+		return
+	}
+
 	if err := h.repo.DeleteAll(); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete books"})
 		return
@@ -104,10 +124,16 @@ func (h *BooksHandler) DeleteAll(c *gin.Context) {
 // @Param id path int true "Book ID"
 // @Success 200 {object} dto.BookResponseDTO
 // @Failure 400 {object} map[string]string
+// @Failure 403 {object} map[string]string
 // @Failure 404 {object} map[string]string
 // @Failure 500 {object} map[string]string
 // @Router /books/{id} [get]
 func (h *BooksHandler) GetByID(c *gin.Context) {
+	if !h.config.EnableGetBooks {
+		c.JSON(http.StatusForbidden, gin.H{"error": "GET /books endpoint is disabled"})
+		return
+	}
+
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID format"})
@@ -139,10 +165,16 @@ func (h *BooksHandler) GetByID(c *gin.Context) {
 // @Param book body dto.BookUpdateDTO true "Updated book data"
 // @Success 204
 // @Failure 400 {object} map[string]interface{}
+// @Failure 403 {object} map[string]string
 // @Failure 404 {object} map[string]string
 // @Failure 500 {object} map[string]string
 // @Router /books/{id} [put]
 func (h *BooksHandler) Update(c *gin.Context) {
+	if !h.config.EnablePutBooks {
+		c.JSON(http.StatusForbidden, gin.H{"error": "PUT /books endpoint is disabled"})
+		return
+	}
+
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID format"})
@@ -186,10 +218,16 @@ func (h *BooksHandler) Update(c *gin.Context) {
 // @Param id path int true "Book ID"
 // @Success 204
 // @Failure 400 {object} map[string]string
+// @Failure 403 {object} map[string]string
 // @Failure 404 {object} map[string]string
 // @Failure 500 {object} map[string]string
 // @Router /books/{id} [delete]
 func (h *BooksHandler) Delete(c *gin.Context) {
+	if !h.config.EnableDeleteBooks {
+		c.JSON(http.StatusForbidden, gin.H{"error": "DELETE /books endpoint is disabled"})
+		return
+	}
+
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID format"})
