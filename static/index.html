@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Library Management System</title>
+    <link rel="stylesheet" href="/static/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Library Management System</h1>
+            <p class="subtitle">Manage books and readers</p>
+        </header>
+
+        <div class="tabs">
+            <button class="tab-button active" data-tab="books">Books</button>
+            <button class="tab-button" data-tab="readers">Readers</button>
+        </div>
+
+        <div id="notification" class="notification hidden"></div>
+
+        <div id="books-section" class="tab-content active">
+            <div class="section-header">
+                <h2>Books Management</h2>
+                <div class="action-buttons">
+                    <button id="add-book-btn" class="btn btn-primary">Add Book</button>
+                    <button id="refresh-books-btn" class="btn btn-secondary">Refresh</button>
+                    <button id="delete-all-books-btn" class="btn btn-danger">Delete All</button>
+                </div>
+            </div>
+
+            <div id="book-form-container" class="form-container hidden">
+                <h3 id="book-form-title">Add New Book</h3>
+                <form id="book-form">
+                    <input type="hidden" id="book-id">
+                    <div class="form-group">
+                        <label for="book-title">Title *</label>
+                        <input type="text" id="book-title" required minlength="1" maxlength="255">
+                        <span class="error-message" id="book-title-error"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="book-description">Description</label>
+                        <textarea id="book-description" rows="4" maxlength="1000"></textarea>
+                        <span class="error-message" id="book-description-error"></span>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary" id="book-submit-btn">Save Book</button>
+                        <button type="button" class="btn btn-secondary" id="book-cancel-btn">Cancel</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="search-container">
+                <h3>Search Book by ID</h3>
+                <div class="search-form">
+                    <input type="number" id="search-book-id" placeholder="Enter book ID" min="1">
+                    <button id="search-book-btn" class="btn btn-primary">Search</button>
+                </div>
+                <div id="book-detail" class="detail-container hidden"></div>
+            </div>
+
+            <div class="list-container">
+                <h3>All Books</h3>
+                <div id="books-loading" class="loading hidden">Loading...</div>
+                <div id="books-list"></div>
+            </div>
+        </div>
+
+        <div id="readers-section" class="tab-content">
+            <div class="section-header">
+                <h2>Readers Management</h2>
+                <div class="action-buttons">
+                    <button id="add-reader-btn" class="btn btn-primary">Add Reader</button>
+                    <button id="refresh-readers-btn" class="btn btn-secondary">Refresh</button>
+                    <button id="delete-all-readers-btn" class="btn btn-danger">Delete All</button>
+                </div>
+            </div>
+
+            <div id="reader-form-container" class="form-container hidden">
+                <h3 id="reader-form-title">Add New Reader</h3>
+                <form id="reader-form">
+                    <input type="hidden" id="reader-id">
+                    <div class="form-group">
+                        <label for="reader-name">Name *</label>
+                        <input type="text" id="reader-name" required minlength="1" maxlength="100">
+                        <span class="error-message" id="reader-name-error"></span>
+                    </div>
+                    <div class="form-group">
+                        <label for="reader-surname">Surname *</label>
+                        <input type="text" id="reader-surname" required minlength="1" maxlength="100">
+                        <span class="error-message" id="reader-surname-error"></span>
+                    </div>
+                    <div class="form-actions">
+                        <button type="submit" class="btn btn-primary" id="reader-submit-btn">Save Reader</button>
+                        <button type="button" class="btn btn-secondary" id="reader-cancel-btn">Cancel</button>
+                    </div>
+                </form>
+            </div>
+
+            <div class="search-container">
+                <h3>Search Reader by ID</h3>
+                <div class="search-form">
+                    <input type="number" id="search-reader-id" placeholder="Enter reader ID" min="1">
+                    <button id="search-reader-btn" class="btn btn-primary">Search</button>
+                </div>
+                <div id="reader-detail" class="detail-container hidden"></div>
+            </div>
+
+            <div class="list-container">
+                <h3>All Readers</h3>
+                <div id="readers-loading" class="loading hidden">Loading...</div>
+                <div id="readers-list"></div>
+            </div>
+        </div>
+    </div>
+
+    <div id="confirm-modal" class="modal hidden">
+        <div class="modal-content">
+            <h3>Confirm Action</h3>
+            <p id="confirm-message"></p>
+            <div class="modal-actions">
+                <button id="confirm-yes" class="btn btn-danger">Yes, Delete</button>
+                <button id="confirm-no" class="btn btn-secondary">Cancel</button>
+            </div>
+        </div>
+    </div>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>

@@ -28,6 +28,10 @@ func main() {
 
 	r := gin.Default()
 
+	// Serve static files
+	r.Static("/static", "./static")
+	r.StaticFile("/", "./static/index.html")
+
 	books := r.Group("/books")
 	{
 		books.GET("/", booksHandler.GetAll)
