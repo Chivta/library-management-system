@@ -15,6 +15,8 @@ type ReaderRepository interface {
 	Update(reader *models.Reader) error
 	Delete(id uint) error
 	DeleteAll() error
+	AddCurrentlyReading(readerID uint, book *models.Book) error
+	RemoveCurrentlyReading(readerID uint, bookID uint) error
 }
 
 type readerRepository struct {
@@ -46,7 +48,7 @@ func (r *readerRepository) FindAll() ([]models.Reader, error) {
 	}
 
 	var readers []models.Reader
-	err := r.db.Find(&readers).Error
+	err := r.db.Preload("CurrentlyReading.User").Find(&readers).Error
 	if err != nil {
 		log.Printf("ReaderRepository.FindAll: error fetching readers: %v", err)
 		return readers, err
@@ -66,7 +68,7 @@ func (r *readerRepository) FindByID(id uint) (*models.Reader, error) {
 	}
 
 	var reader models.Reader
-	err := r.db.First(&reader, id).Error
+	err := r.db.Preload("CurrentlyReading.User").First(&reader, id).Error
 	if err != nil {
 		log.Printf("ReaderRepository.FindByID: error fetching reader with ID=%d: %v", id, err)
 		return nil, err
@@ -111,6 +113,49 @@ func (r *readerRepository) DeleteAll() error {
 		return err
 	}
 	log.Printf("ReaderRepository.DeleteAll: all readers deleted successfully")
-	r.cache.InvalidatePattern(cache.ReaderListKey())
+	r.cache.InvalidatePattern("readers:") // Invalidate ALL reader-related cache entries
+	return nil
+}
+
+func (r *readerRepository) AddCurrentlyReading(readerID uint, book *models.Book) error {
+	log.Printf("ReaderRepository.AddCurrentlyReading: adding book ID=%d to reader ID=%d", book.ID, readerID)
+	
+	var reader models.Reader
+	if err := r.db.First(&reader, readerID).Error; err != nil {
+		log.Printf("ReaderRepository.AddCurrentlyReading: error finding reader: %v", err)
+		return err
+	}
+
+	if err := r.db.Model(&reader).Association("CurrentlyReading").Append(book); err != nil {
+		log.Printf("ReaderRepository.AddCurrentlyReading: error adding book: %v", err)
+		return err
+	}
+
+	log.Printf("ReaderRepository.AddCurrentlyReading: book added successfully")
+	r.cache.Invalidate(cache.ReaderIDKey(readerID))
+	r.cache.Invalidate(cache.ReaderListKey())
+	return nil
+}
+
+func (r *readerRepository) RemoveCurrentlyReading(readerID uint, bookID uint) error {
+	log.Printf("ReaderRepository.RemoveCurrentlyReading: removing book ID=%d from reader ID=%d", bookID, readerID)
+	
+	var reader models.Reader
+	if err := r.db.First(&reader, readerID).Error; err != nil {
+		log.Printf("ReaderRepository.RemoveCurrentlyReading: error finding reader: %v", err)
+		return err
+	}
+
+	var book models.Book
+	book.ID = bookID
+
+	if err := r.db.Model(&reader).Association("CurrentlyReading").Delete(&book); err != nil {
+		log.Printf("ReaderRepository.RemoveCurrentlyReading: error removing book: %v", err)
+		return err
+	}
+
+	log.Printf("ReaderRepository.RemoveCurrentlyReading: book removed successfully")
+	r.cache.Invalidate(cache.ReaderIDKey(readerID))
+	r.cache.Invalidate(cache.ReaderListKey())
 	return nil
 }

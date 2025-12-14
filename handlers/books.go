@@ -49,6 +49,8 @@ func (h *BooksHandler) GetAll(c *gin.Context) {
 			ID:          book.ID,
 			Title:       book.Title,
 			Description: book.Description,
+			UserID:      book.UserID,
+			Username:    book.User.Username,
 		}
 	}
 	c.JSON(http.StatusOK, response)
@@ -70,6 +72,13 @@ func (h *BooksHandler) Create(c *gin.Context) {
 		return
 	}
 
+	// Get user ID from context (set by AuthMiddleware)
+	userID, exists := c.Get("user_id")
+	if !exists {
+		c.JSON(http.StatusUnauthorized, gin.H{"error": "User not authenticated"})
+		return
+	}
+
 	var bookDTO dto.BookCreateDTO
 	if err := c.ShouldBindJSON(&bookDTO); err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid JSON", "details": err.Error()})
@@ -84,6 +93,7 @@ func (h *BooksHandler) Create(c *gin.Context) {
 	book := models.Book{
 		Title:       bookDTO.Title,
 		Description: bookDTO.Description,
+		UserID:      userID.(uint),
 	}
 
 	if err := h.repo.Create(&book); err != nil {
@@ -91,10 +101,15 @@ func (h *BooksHandler) Create(c *gin.Context) {
 		return
 	}
 
+	// Get username for response
+	username, _ := c.Get("username")
+
 	response := dto.BookResponseDTO{
 		ID:          book.ID,
 		Title:       book.Title,
 		Description: book.Description,
+		UserID:      book.UserID,
+		Username:    username.(string),
 	}
 	c.JSON(http.StatusCreated, response)
 }
@@ -108,6 +123,13 @@ func (h *BooksHandler) Create(c *gin.Context) {
 func (h *BooksHandler) DeleteAll(c *gin.Context) {
 	if !h.config.EnableDeleteBooks {
 		c.JSON(http.StatusForbidden, gin.H{"error": "DELETE /books endpoint is disabled"})
+		return
+	}
+
+	// Only admin can delete all books
+	role, _ := c.Get("role")
+	if role.(string) != "admin" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "Only admin can delete all books"})
 		return
 	}
 
@@ -154,6 +176,8 @@ func (h *BooksHandler) GetByID(c *gin.Context) {
 		ID:          book.ID,
 		Title:       book.Title,
 		Description: book.Description,
+		UserID:      book.UserID,
+		Username:    book.User.Username,
 	}
 	c.JSON(http.StatusOK, response)
 }
@@ -175,6 +199,10 @@ func (h *BooksHandler) Update(c *gin.Context) {
 		return
 	}
 
+	// Get current user info
+	userID, _ := c.Get("user_id")
+	role, _ := c.Get("role")
+
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID format"})
@@ -188,6 +216,12 @@ func (h *BooksHandler) Update(c *gin.Context) {
 		} else {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve book"})
 		}
+		return
+	}
+
+	// Check ownership: only owner or admin can update
+	if book.UserID != userID.(uint) && role.(string) != "admin" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "You can only edit your own books"})
 		return
 	}
 
@@ -228,19 +262,29 @@ func (h *BooksHandler) Delete(c *gin.Context) {
 		return
 	}
 
+	// Get current user info
+	userID, _ := c.Get("user_id")
+	role, _ := c.Get("role")
+
 	id, err := strconv.Atoi(c.Param("id"))
 	if err != nil {
 		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid ID format"})
 		return
 	}
 
-	_, err = h.repo.FindByID(uint(id))
+	book, err := h.repo.FindByID(uint(id))
 	if err != nil {
 		if errors.Is(err, gorm.ErrRecordNotFound) {
 			c.JSON(http.StatusNotFound, gin.H{"error": "Book not found"})
 		} else {
 			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to retrieve book"})
 		}
+		return
+	}
+
+	// Check ownership: only owner or admin can delete
+	if book.UserID != userID.(uint) && role.(string) != "admin" {
+		c.JSON(http.StatusForbidden, gin.H{"error": "You can only delete your own books"})
 		return
 	}
 

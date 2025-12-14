@@ -1,2 +1,4 @@
 server
 library.db
+*.md
+!README.md

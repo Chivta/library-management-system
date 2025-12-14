@@ -10,6 +10,7 @@ import (
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
+	"gorm.io/gorm/logger"
 )
 
 type Container struct {
@@ -18,6 +19,7 @@ type Container struct {
 	Cache            *cache.Cache
 	BookRepository   repository.BookRepository
 	ReaderRepository repository.ReaderRepository
+	UserRepository   repository.UserRepository
 	Validator        *validation.Validator
 }
 
@@ -30,18 +32,24 @@ func NewContainer(dbPath string, configPath string) (*Container, error) {
 
 	cacheInstance := cache.NewCache(cfg.CacheTTLSeconds)
 
-	db, err := gorm.Open(sqlite.Open(dbPath), &gorm.Config{})
+	db, err := gorm.Open(sqlite.Open(dbPath), &gorm.Config{
+		Logger: logger.Default.LogMode(logger.Silent), // Suppress "record not found" logs
+	})
 	if err != nil {
 		return nil, err
 	}
 
-	err = db.AutoMigrate(&models.Book{}, &models.Reader{})
+	err = db.AutoMigrate(&models.Book{}, &models.Reader{}, &models.User{})
 	if err != nil {
 		return nil, err
 	}
+
+	// Seed admin user if not exists
+	seedAdminUser(db)
 
 	bookRepo := repository.NewBookRepository(db, cacheInstance)
 	readerRepo := repository.NewReaderRepository(db, cacheInstance)
+	userRepo := repository.NewUserRepository(db)
 
 	validator := validation.NewValidator()
 
@@ -51,6 +59,7 @@ func NewContainer(dbPath string, configPath string) (*Container, error) {
 		Cache:            cacheInstance,
 		BookRepository:   bookRepo,
 		ReaderRepository: readerRepo,
+		UserRepository:   userRepo,
 		Validator:        validator,
 	}, nil
 }
@@ -61,4 +70,28 @@ func (c *Container) Close() error {
 		return err
 	}
 	return sqlDB.Close()
+}
+
+// seedAdminUser creates default admin user if it doesn't exist
+func seedAdminUser(db *gorm.DB) {
+	var adminUser models.User
+	result := db.Where("username = ?", "admin").First(&adminUser)
+
+	if result.Error == gorm.ErrRecordNotFound {
+		// Create admin user
+		adminUser = models.User{
+			Username: "admin",
+			Email:    "admin@example.com",
+			Role:     "admin",
+		}
+		if err := adminUser.HashPassword("password"); err != nil {
+			log.Printf("Failed to hash admin password: %v", err)
+			return
+		}
+		if err := db.Create(&adminUser).Error; err != nil {
+			log.Printf("Failed to create admin user: %v", err)
+			return
+		}
+		log.Println("✓ Default admin user created (username: admin, password: password)")
+	}
 }

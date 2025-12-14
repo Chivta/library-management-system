@@ -45,10 +45,21 @@ func (h *ReadersHandler) GetAll(c *gin.Context) {
 
 	response := make([]dto.ReaderResponseDTO, len(readers))
 	for i, reader := range readers {
+		books := make([]dto.BookResponseDTO, len(reader.CurrentlyReading))
+		for j, book := range reader.CurrentlyReading {
+			books[j] = dto.BookResponseDTO{
+				ID:          book.ID,
+				Title:       book.Title,
+				Description: book.Description,
+				UserID:      book.UserID,
+				Username:    book.User.Username,
+			}
+		}
 		response[i] = dto.ReaderResponseDTO{
-			ID:      reader.ID,
-			Name:    reader.Name,
-			Surname: reader.Surname,
+			ID:               reader.ID,
+			Name:             reader.Name,
+			Surname:          reader.Surname,
+			CurrentlyReading: books,
 		}
 	}
 	c.JSON(http.StatusOK, response)
@@ -150,10 +161,22 @@ func (h *ReadersHandler) GetByID(c *gin.Context) {
 		return
 	}
 
+	books := make([]dto.BookResponseDTO, len(reader.CurrentlyReading))
+	for i, book := range reader.CurrentlyReading {
+		books[i] = dto.BookResponseDTO{
+			ID:          book.ID,
+			Title:       book.Title,
+			Description: book.Description,
+			UserID:      book.UserID,
+			Username:    book.User.Username,
+		}
+	}
+
 	response := dto.ReaderResponseDTO{
-		ID:      reader.ID,
-		Name:    reader.Name,
-		Surname: reader.Surname,
+		ID:               reader.ID,
+		Name:             reader.Name,
+		Surname:          reader.Surname,
+		CurrentlyReading: books,
 	}
 	c.JSON(http.StatusOK, response)
 }
@@ -246,6 +269,61 @@ func (h *ReadersHandler) Delete(c *gin.Context) {
 
 	if err := h.repo.Delete(uint(id)); err != nil {
 		c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to delete reader"})
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}
+
+// AddCurrentlyReading adds a book to reader's currently reading list
+func (h *ReadersHandler) AddCurrentlyReading(c *gin.Context) {
+	readerID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid reader ID"})
+		return
+	}
+
+	bookID, err := strconv.Atoi(c.Param("bookId"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid book ID"})
+		return
+	}
+
+	book := &models.Book{}
+	book.ID = uint(bookID)
+
+	if err := h.repo.AddCurrentlyReading(uint(readerID), book); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Reader not found"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to add book to reading list"})
+		}
+		return
+	}
+
+	c.Status(http.StatusNoContent)
+}
+
+// RemoveCurrentlyReading removes a book from reader's currently reading list
+func (h *ReadersHandler) RemoveCurrentlyReading(c *gin.Context) {
+	readerID, err := strconv.Atoi(c.Param("id"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid reader ID"})
+		return
+	}
+
+	bookID, err := strconv.Atoi(c.Param("bookId"))
+	if err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Invalid book ID"})
+		return
+	}
+
+	if err := h.repo.RemoveCurrentlyReading(uint(readerID), uint(bookID)); err != nil {
+		if errors.Is(err, gorm.ErrRecordNotFound) {
+			c.JSON(http.StatusNotFound, gin.H{"error": "Reader not found"})
+		} else {
+			c.JSON(http.StatusInternalServerError, gin.H{"error": "Failed to remove book from reading list"})
+		}
 		return
 	}
 

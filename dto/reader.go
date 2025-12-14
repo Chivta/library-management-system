@@ -11,7 +11,8 @@ type ReaderUpdateDTO struct {
 }
 
 type ReaderResponseDTO struct {
-	ID      uint   `json:"id"`
-	Name    string `json:"name"`
-	Surname string `json:"surname"`
+	ID               uint              `json:"id"`
+	Name             string            `json:"name"`
+	Surname          string            `json:"surname"`
+	CurrentlyReading []BookResponseDTO `json:"currently_reading"`
 }

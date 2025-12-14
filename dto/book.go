@@ -14,4 +14,6 @@ type BookResponseDTO struct {
 	ID          uint   `json:"id"`
 	Title       string `json:"title"`
 	Description string `json:"description"`
+	UserID      uint   `json:"user_id"`
+	Username    string `json:"username"`
 }

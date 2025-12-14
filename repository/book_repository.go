@@ -46,7 +46,7 @@ func (r *bookRepository) FindAll() ([]models.Book, error) {
 	}
 
 	var books []models.Book
-	err := r.db.Find(&books).Error
+	err := r.db.Preload("User").Find(&books).Error
 	if err != nil {
 		log.Printf("BookRepository.FindAll: error fetching books: %v", err)
 		return books, err
@@ -66,7 +66,7 @@ func (r *bookRepository) FindByID(id uint) (*models.Book, error) {
 	}
 
 	var book models.Book
-	err := r.db.First(&book, id).Error
+	err := r.db.Preload("User").First(&book, id).Error
 	if err != nil {
 		log.Printf("BookRepository.FindByID: error fetching book with ID=%d: %v", id, err)
 		return nil, err
@@ -111,6 +111,6 @@ func (r *bookRepository) DeleteAll() error {
 		return err
 	}
 	log.Printf("BookRepository.DeleteAll: all books deleted successfully")
-	r.cache.InvalidatePattern(cache.BookListKey())
+	r.cache.InvalidatePattern("books:") // Invalidate ALL book-related cache entries
 	return nil
 }
