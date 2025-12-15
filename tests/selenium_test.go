@@ -24,7 +24,7 @@ func setupWebDriver(t *testing.T) {
 
 	chromeCaps := chrome.Capabilities{
 		Args: []string{
-			"--headless",
+			// "--headless",
 			"--no-sandbox",
 			"--disable-dev-shm-usage",
 			"--disable-gpu",
@@ -33,6 +33,18 @@ func setupWebDriver(t *testing.T) {
 			"--disable-offline-load-stale-cache",
 			"--window-size=1920,1080",
 		},
+		Path:            "",
+		ExcludeSwitches: []string{},
+		Extensions:      []string{},
+		LocalState:      map[string]interface{}{},
+		Prefs:           map[string]interface{}{},
+		Detach:          new(bool),
+		DebuggerAddr:    "",
+		MinidumpPath:    "",
+		MobileEmulation: &chrome.MobileEmulation{},
+		WindowTypes:     []string{},
+		AndroidPackage:  "",
+		W3C:             false,
 	}
 	caps.AddChrome(chromeCaps)
 
@@ -713,5 +725,63 @@ func TestUserProfile(t *testing.T) {
 	displayed, _ := profileModal.IsDisplayed()
 	if !displayed {
 		t.Fatal("Profile modal should be visible")
+	}
+}
+
+// Test 10: Negative - Create Book with Empty Title
+func TestCreateBookNegativeEmptyTitle(t *testing.T) {
+	setupWebDriver(t)
+	defer teardownWebDriver()
+
+	loginHelper(t)
+
+	addBookBtn := waitForElement(t, selenium.ByID, "add-book-btn", 5*time.Second)
+	addBookBtn.Click()
+
+	titleInput := waitForElement(t, selenium.ByID, "book-title", 2*time.Second)
+	titleInput.Clear()
+
+	nextBtn := waitForElement(t, selenium.ByID, "book-form-next", 1*time.Second)
+	nextBtn.Click()
+
+	time.Sleep(500 * time.Millisecond)
+
+	validationMsg, _ := titleInput.GetAttribute("validationMessage")
+	if validationMsg == "" {
+		t.Fatal("Validation message should be displayed for empty title")
+	}
+}
+
+// Test 11: Negative - Invalid Login Credentials
+func TestLoginNegativeInvalidCredentials(t *testing.T) {
+	setupWebDriver(t)
+	defer teardownWebDriver()
+
+	if err := wd.Get(baseURL); err != nil {
+		t.Fatalf("Failed to load page: %v", err)
+	}
+
+	loginTab := waitForElement(t, selenium.ByXPATH, "//button[@data-auth-tab='login']", 5*time.Second)
+	loginTab.Click()
+	time.Sleep(500 * time.Millisecond)
+
+	loginUsername := waitForElement(t, selenium.ByID, "login-username", 2*time.Second)
+	loginUsername.SendKeys("nonexistentuser")
+
+	loginPassword := waitForElement(t, selenium.ByID, "login-password", 1*time.Second)
+	loginPassword.SendKeys("wrongpassword")
+
+	loginSubmit, err := wd.FindElement(selenium.ByID, "login-submit-btn")
+	if err != nil {
+		t.Fatalf("Failed to find login submit button: %v", err)
+	}
+	loginSubmit.Click()
+
+	time.Sleep(2 * time.Second)
+
+	notification := waitForElement(t, selenium.ByID, "notification", 5*time.Second)
+	className, _ := notification.GetAttribute("class")
+	if !contains(className, "error") {
+		t.Fatal("Error notification should be displayed for invalid credentials")
 	}
 }
